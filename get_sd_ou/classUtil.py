@@ -73,6 +73,8 @@ class Url():
                     resp.raise_for_status()
                 except requests.exceptions.RequestException as e:
                     print("Connection refused", e)
+                    print(f"headers={self.headers}, proxies={global_proxies}")
+                    print(f"resp={resp}, resp.__dir__={resp.__dir__()}")
                     global_proxies = next(proxy_rotator)
                 except requests.exceptions.Timeout as e:
                     print("Connection TimeOut", e)

@@ -5,7 +5,7 @@ import mysql.connector
 logger = logging.getLogger('mainLogger')
 
 
-def init_db(host="localhost", user="sciencedirect", password="root", port='3306'):
+def init_db(host="localhost", user="science", password="root@11A", port='3306'):
     logger.debug('[databaseUtil][init_db][IN]')
     cnx = mysql.connector.connect(
         host=host,
