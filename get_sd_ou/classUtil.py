@@ -1,13 +1,15 @@
-from hashlib import sha1
 import json
 import logging
 import re
+from hashlib import sha1
 from urllib.parse import parse_qsl, unquote_plus, urljoin, urlparse
 
 import requests
+from bs4 import BeautifulSoup as bs
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
-from bs4 import BeautifulSoup as bs
+
+# from get_sd_ou.proxy import proxy_generator
 
 logger = logging.getLogger('mainLogger')
 
@@ -21,6 +23,12 @@ http = requests.Session()
 http.mount("https://", adapter)
 http.mount("http://", adapter)
 
+def proxy_generator():
+    with open('proxylist.txt') as proxy_file:
+        for line in proxy_file.readlines():
+            yield {'http':'http'+line.strip()}
+proxy_rotator = proxy_generator()
+global_proxies = {}
 
 class Url():
     def __init__(self, url, headers={}, **kwargs):
@@ -57,13 +65,21 @@ class Url():
 
     @property
     def response(self):
-        try:
-            self.__getattribute__('_response')
-            logger.debug('[ Url ] response exist')
-            return self._response
-        except AttributeError:
-            logger.debug('[ Url ] getting url response | url: %s', self.url)
-            self._response = http.get(self.url, headers=self.headers)
+        global global_proxies
+        if not hasattr(self, '_response'):
+            while True:
+                try:
+                    resp = http.get(self.url, headers=self.headers, proxies=global_proxies)
+                    resp.raise_for_status()
+                except requests.exceptions.RequestException as e:
+                    print("Connection refused", e)
+                    global_proxies = next(proxy_rotator)
+                except requests.exceptions.Timeout as e:
+                    print("Connection TimeOut", e)
+                    global_proxies = next(proxy_rotator)
+                else:
+                    self._response = resp
+
         return self._response
 
     def _get_filename_from_cd(self, cd):
