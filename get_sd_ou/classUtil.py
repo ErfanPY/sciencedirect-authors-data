@@ -26,7 +26,7 @@ http.mount("http://", adapter)
 def proxy_generator():
     with open('proxylist.txt') as proxy_file:
         for line in proxy_file.readlines():
-            yield {'http':'http'+line.strip()}
+            yield {'http':'http://'+line.strip()}
 proxy_rotator = proxy_generator()
 global_proxies = {}
 
