@@ -23,6 +23,9 @@ http = requests.Session()
 http.mount("https://", adapter)
 http.mount("http://", adapter)
 
+def my_ip():
+    return json.loads(requests.get('http://ip-api.com/json/').content)['query']
+
 def proxy_generator():
     with open('proxylist.txt') as proxy_file:
         for line in proxy_file.readlines():

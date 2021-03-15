@@ -1,6 +1,7 @@
 import unittest
 
 from get_sd_ou import classUtil
+import requests
 
 
 class TestSearchPage(unittest.TestCase):
@@ -33,20 +34,37 @@ class TestSearchPage(unittest.TestCase):
         self.assertTrue(True)
 
 class TestArticle(unittest.TestCase):
-    def a():
+    def a(self):
         pass
 
+class TestProxy(unittest.TestCase):
+    def __init__(self):
+        self.headers = {
+                    'Accept': 'application/json, text/plain, */*',
+                    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:80.0) Gecko/20100101 Firefox/80.0'
+            }
+    
+    def proxy_generator(self):
+        with open('proxylist.txt') as proxy_file:
+            for line in proxy_file.readlines():
+                yield {'http':'http'+line.strip()}
+
+    def test_proxy(self):
+        proxy_rotator = self.proxy_generator()
+        global_proxies = next(proxy_rotator)
+        requests.get('https://www.sciencedirect.com/browse/journals-and-books/', proxies=global_proxies, headers=self.headers)
+
 class TestAuthor(unittest.TestCase):
-    def a():
+    def a(self):
         pass
 
 
 class TestJournalsSearch(unittest.TestCase):
-    def a():
+    def a(self):
         pass
 
 class TestJournal(unittest.TestCase):
-    def a():
+    def a(self):
         pass
 
 if __name__ == '__main__':
