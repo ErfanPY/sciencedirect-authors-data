@@ -26,7 +26,7 @@ http.mount("http://", adapter)
 def proxy_generator():
     with open('proxylist.txt') as proxy_file:
         for line in proxy_file.readlines():
-            yield {'http':'http'+line.strip()}
+            yield {'http':'http://'+line.strip()}
 proxy_rotator = proxy_generator()
 global_proxies = {}
 
@@ -73,6 +73,8 @@ class Url():
                     resp.raise_for_status()
                 except requests.exceptions.RequestException as e:
                     print("Connection refused", e)
+                    print(f"headers={self.headers}, proxies={global_proxies}")
+                    print(f"resp={resp}, resp.__dir__={resp.__dir__()}")
                     global_proxies = next(proxy_rotator)
                 except requests.exceptions.Timeout as e:
                     print("Connection TimeOut", e)
