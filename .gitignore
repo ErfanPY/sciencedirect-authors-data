@@ -12,3 +12,4 @@ dump.rdb
 tmp/
 
 dump.rdb
+get_sd_ou/proxylist.txt
