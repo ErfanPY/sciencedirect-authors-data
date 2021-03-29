@@ -42,10 +42,10 @@ def save_article_to_db(article_data, db_connection):
     logger.debug(f"thread: ({current_thread().name})[journal_scraper]-[save_article_to_db] | {article_id}")
 
 
-def get_node_children(node):
+def get_node_children(node, **kwargs):
 
     if node == "ROOT":
-        yield from iterate_journal_searches()
+        yield from iterate_journal_searches(kwargs['start_letter'])
     elif isinstance(node, JournalsSearch):
         yield from node.iterate_journals()
     elif isinstance(node, Journal):
@@ -58,16 +58,16 @@ def get_node_children(node):
         raise Exception(f"Invalid node - ({type(node)}) - {node}")
 
 
-def iterate_journal_searches():
-    journal_search = JournalsSearch().get_next_page()
+def iterate_journal_searches(start_letter=""):
+    journal_search = JournalsSearch(letter=start_letter).get_next_page()
     while journal_search:
         yield journal_search
         journal_search = journal_search.get_next_page()
 
 
-def deep_first_search_for_articles(self_node, article_url_queue, mysql_connection):
+def deep_first_search_for_articles(self_node, article_url_queue, mysql_connection, **kwargs):
     if not self_node.__hash__() in visited:
-        node_children = get_node_children(self_node)
+        node_children = get_node_children(self_node, **kwargs)
 
         if isinstance(self_node, Volume):  # deepest node of tree before articles is Volume
             articles = list(node_children)
@@ -131,8 +131,9 @@ if __name__ == "__main__":
     lock = Lock()
 
     article_queue = Queue(maxsize=500)
+    start_letter = input("Start from which letter: ")
     search_thread = Thread(target=deep_first_search_for_articles,
-                           args=("ROOT", article_queue, mysql_connection))
+                           args=("ROOT", article_queue, mysql_connection), kwargs={"start_letter":start_letter})
     try:
         search_thread.start()
 
