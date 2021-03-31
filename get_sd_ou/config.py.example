@@ -1,4 +1,9 @@
 class Config:
-    THREADS_COUNT = 15
-    LOG_LEVEL = 20 # OR logging.INFO | Debug = 10
+    THREADS_COUNT  = 15
+    LOG_LEVEL      = 20 # OR logging.INFO | Debug = 10
     QUEUE_MAX_SIZE = 500
+
+    DATABASE_HOST     = None
+    DATABASE_USER     = None
+    DATABASE_PASSWORD = None
+    DATABASE_PORT     = None

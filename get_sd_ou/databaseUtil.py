@@ -1,17 +1,17 @@
 import logging
 
 import mysql.connector
-
+from get_sd_ou.config import Config
 logger = logging.getLogger('mainLogger')
 
 
-def init_db(host="localhost", user="science", password="root@11A", port='3306'):
+def init_db(host=None, user=None, password=None, port=None):
     logger.debug('[databaseUtil][init_db][IN]')
     cnx = mysql.connector.connect(
-        host=host,
-        user=user,
-        password=password,
-        port=port
+        host     = host     or Config.DATABASE_HOST,
+        user     = user     or Config.DATABASE_USER,
+        password = password or Config.DATABASE_PASSWORD,
+        port     = port     or Config.DATABASE_PORT
     )
     logger.debug('[databaseUtil][init_db][OUT] | db_connection : %s', cnx)
 
