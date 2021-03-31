@@ -9,8 +9,6 @@ from bs4 import BeautifulSoup as bs
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-# from get_sd_ou.proxy import proxy_generator
-
 logger = logging.getLogger('mainLogger')
 
 retry_strategy = Retry(
@@ -50,19 +48,6 @@ class Url():
         _path = unquote_plus(url_parts.path)
         self.url_parts = url_parts._replace(query=_query, path=_path)
 
-    def is_downloadable(self):
-        """
-        Does the url contain a downloadable resource
-        """
-        h = requests.head(self.url, allow_redirects=True)
-        header = h.headers
-        content_type = header.get('content-type')
-        if 'text' in content_type.lower():
-            return False
-        if 'html' in content_type.lower():
-            return False
-        return True
-
     def join_url_path_to_self_netloc(self, url_path):
         return urljoin('https://' + self.url_parts.netloc, url_path)
 
@@ -70,58 +55,36 @@ class Url():
     def response(self):
         global global_proxies
         if not hasattr(self, '_response'):
-            while True:
-                try:
-                    resp = http.get(self.url, headers=self.headers, proxies=global_proxies)
-                    resp.raise_for_status()
-                except requests.exceptions.RequestException as e:
-                    print("Connection refused", e)
-                    print(f"headers={self.headers}, proxies={global_proxies}")
-                    global_proxies = next(proxy_rotator)
-                except requests.exceptions.Timeout as e:
-                    print("Connection TimeOut", e)
-                    global_proxies = next(proxy_rotator)
-                else:
-                    self._response = resp
+            try:
+                # resp = http.get(self.url, headers=self.headers, proxies=global_proxies)
+                resp = http.get(self.url, headers=self.headers)
+                resp.raise_for_status()
+            except requests.exceptions.RequestException as e:
+                print("Connection refused", e)
+                print(f"headers={self.headers}, proxies={global_proxies}")
+                global_proxies = next(proxy_rotator)
+            except requests.exceptions.Timeout as e:
+                print("Connection TimeOut", e)
+                global_proxies = next(proxy_rotator)
+            else:
+                self._response = resp
 
         return self._response
 
-    def _get_filename_from_cd(self, cd):
-        """
-        Get filename from content-disposition
-        """
-        if not cd:
-            return None
-        fname = re.findall('filename=(.+)', cd)
-        if len(fname) == 0:
-            return None
-        return fname[0]
-
-    def __str__(self) -> str:
-        return self.url
-
-    def __eq__(self, other):
-        # Checks netloc and path equality
-        if not isinstance(other, Page):
-            other = Url(other)
-
-        return self.url_parts[1:3] == other.url_parts[1:3]
+    def __hash__(self):
+        return hash(self.url_parts[1:3])
 
 
 class Page(Url):
-    def __init__(self, url, do_soup=False, soup_data=None, **kwargs):
+    def __init__(self, url, soup_data=None, **kwargs):
         logger.debug('[ Page ] __init__ | url: %s', url)
         super().__init__(url=url, soup=None)
 
         self.seen_count = 0
         self.text = ''
+        self._soup = None
         if soup_data:
             self._soup = soup_data
-        elif do_soup:
-            self._soup = self._soup_maker()
-
-    def __hash__(self):
-        return hash(self.url_parts[1:3])
 
     def get_urls(self, include=[]):
         res_urls = []
@@ -134,35 +97,17 @@ class Page(Url):
 
         return res_urls
 
-    def _soup_maker(self):
-        try:
-            content = self.response.content
-        except requests.exceptions.ConnectionError:
-            raise (requests.exceptions.ConnectionError(
-                "[Page] [soup_maker] couldn't make a connection"))
-        soup = bs(content, 'html.parser')
-        return soup
-
     @property
     def soup(self):
-        try:
-            self.__getattribute__('_soup')
-            if self._soup:
-                logger.debug('[ Page ] soup exist | url: %s', self.url)
-                return self._soup
-        except AttributeError:
-            pass
-        self._soup = self._soup_maker()
+        if not self._soup is None:
+            logger.debug('[ Page ] soup exist | url: %s', self.url)
+            return self._soup
+
+        content = self.response.content
+        self._soup = bs(content, 'html.parser')
+
         logger.debug(f'[ Page ] soup made | len_soup: {len(str(self._soup))}')
         return self._soup
-
-    @soup.setter
-    def soup(self, soup):
-        self._soup = soup
-
-    @soup.deleter
-    def soup(self):
-        del self._soup
 
 
 class Author(dict):
@@ -460,22 +405,29 @@ class Journal(Page):
 
     def iterate_volumes(self):
         last_issue_url = self.get_last_issue_url()
-        last_issue = Volume(url=last_issue_url)
+        if not last_issue_url is None:
+            last_issue = Volume(url=last_issue_url)
 
-        yield last_issue
-        previous_issue_url = ''
-        previous_issue_path = last_issue.get_previous()
+            yield last_issue
+            previous_issue_url = ''
+            previous_issue_path = last_issue.get_previous()
 
-        while previous_issue_path:
-            previous_issue_url = self.join_url_path_to_self_netloc(previous_issue_path)
-            previous_issue = Volume(url=previous_issue_url)
+            while previous_issue_path:
+                previous_issue_url = self.join_url_path_to_self_netloc(previous_issue_path)
+                previous_issue = Volume(url=previous_issue_url)
 
-            yield previous_issue
-            previous_issue_path = previous_issue.get_previous()
+                yield previous_issue
+                previous_issue_path = previous_issue.get_previous()
+        else:
+            return []
 
 
     def get_last_issue_url(self):
-        issues_iterator = self.soup.select_one("div.issue").children
+        try:
+            issues_iterator = self.soup.select_one("div.issue").children
+        except Exception as e:
+            print(f"[477]Thecnical doubt e.g:https://www.sciencedirect.com/journal/baillieres-clinical-anaesthesiology\nURL:{self.url}")
+            return None
         last_issue_path = list(issues_iterator)[0].get('href')
         last_issue_url = self.join_url_path_to_self_netloc(last_issue_path)
         return last_issue_url
