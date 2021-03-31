@@ -6,7 +6,7 @@ from threading import Thread, current_thread, Lock
 
 
 from get_sd_ou.databaseUtil import insert_article_data, init_db
-
+from get_sd_ou.config import Config
 
 def scrape_and_save_article(article_url_queue, mysql_connection):
     first_url = article_url_queue.get()
@@ -59,7 +59,7 @@ def get_node_children(node, **kwargs):
 
 
 def iterate_journal_searches(start_letter=""):
-    journal_search = JournalsSearch(letter=start_letter).get_next_page()
+    journal_search = JournalsSearch(letter=start_letter)
     while journal_search:
         yield journal_search
         journal_search = journal_search.get_next_page()
@@ -119,7 +119,7 @@ def load_visited(mysql_connection=None):
 if __name__ == "__main__":
 
     logger = logging.getLogger('mainLogger')
-    logger.setLevel(logging.INFO)
+    logger.setLevel(Config.LOG_LEVEL)
 
     mysql_connection = init_persistance()
 
@@ -130,14 +130,14 @@ if __name__ == "__main__":
 
     lock = Lock()
 
-    article_queue = Queue(maxsize=500)
+    article_queue = Queue(maxsize=Config.QUEUE_MAX_SIZE)
     start_letter = input("Start from which letter: ")
     search_thread = Thread(target=deep_first_search_for_articles,
                            args=("ROOT", article_queue, mysql_connection), kwargs={"start_letter":start_letter})
     try:
         search_thread.start()
 
-        for i in range(15):
+        for i in range(Config.THREADS_COUNT):
             mysql_connection = init_persistance()
 
             t = Thread(target=scrape_and_save_article, args=(article_queue, mysql_connection))

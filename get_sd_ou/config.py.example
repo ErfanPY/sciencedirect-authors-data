@@ -1,0 +1,4 @@
+class Config:
+    THREADS_COUNT = 15
+    LOG_LEVEL = 20 # OR logging.INFO | Debug = 10
+    QUEUE_MAX_SIZE = 500
