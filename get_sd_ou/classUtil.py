@@ -74,6 +74,8 @@ class Url():
     def __hash__(self):
         return hash(self.url_parts[1:3])
 
+    def __str__(self):
+        return f"url: {self.url}, hash: {self.__hash__()}"
 
 class Page(Url):
     def __init__(self, url, soup_data=None, **kwargs):
@@ -193,6 +195,8 @@ class Article(Page):
             data = {'pii': self.pii, 'authors': self.authors, 'bibtex': self.bibtex, 'title': self.title,
                 'keywords': self.keywords}
         except Exception as e:
+            with open('exceptions.txt', "a") as excp_file:
+                excp_file.wrtie(f"\n[519], url:{self.url}, exception:{e}\n")
             print(self.url)
             raise e
 
@@ -253,6 +257,8 @@ class Article(Page):
             try:
                 email = email_check['_'] if email_check else None
             except KeyError:
+                with open('exceptions.txt', "a") as excp_file:
+                    excp_file.wrtie(f"\n[519], url:{self.url}, exception:{e}\n")
                 email = email_check['$$'][0]['_']
 
             authors_res[index] = {'first_name': first_name, 'last_name': last_name,
@@ -360,6 +366,8 @@ class SearchPage(Page):
             href = next_url.get('href')
             return SearchPage(urljoin('https://' + self.url_parts.netloc, href))
         except AttributeError:
+            with open('exceptions.txt', "a") as excp_file:
+                excp_file.wrtie(f"\n[519], url:{self.url}, exception:{e}\n")
             return None
 
 
@@ -423,13 +431,8 @@ class Journal(Page):
 
 
     def get_last_issue_url(self):
-        try:
-            issues_iterator = self.soup.select_one("div.issue").children
-        except Exception as e:
-            print(f"[477]Thecnical doubt e.g:https://www.sciencedirect.com/journal/baillieres-clinical-anaesthesiology\nURL:{self.url}")
-            return None
-        last_issue_path = list(issues_iterator)[0].get('href')
-        last_issue_url = self.join_url_path_to_self_netloc(last_issue_path)
+        # Sciencedirect return last issue url whene requests outof boundry issue number
+        last_issue_url = self.url + "/vol/1000000000000"
         return last_issue_url
 
 
@@ -518,6 +521,8 @@ class JournalsSearch(Page):
                 page_counter_text = self.soup.select_one('.pagination-pages-label').text
                 self._pages_count = int(page_counter_text.split('of')[-1])
         except Exception as e:
+            with open('exceptions.txt', "a") as excp_file:
+                excp_file.wrtie(f"\n[519], url:{self.url}, exception:{e}\n")
             print(self.url)
             raise e
         return self._pages_count
