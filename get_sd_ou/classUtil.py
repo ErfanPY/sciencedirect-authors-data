@@ -196,7 +196,7 @@ class Article(Page):
                 'keywords': self.keywords}
         except Exception as e:
             with open('exceptions.txt', "a") as excp_file:
-                excp_file.wrtie(f"\n[519], url:{self.url}, exception:{e}\n")
+                excp_file.write(f"\n[519], url:{self.url}, exception:{e}\n")
             print(self.url)
             raise e
 
@@ -258,7 +258,7 @@ class Article(Page):
                 email = email_check['_'] if email_check else None
             except KeyError:
                 with open('exceptions.txt', "a") as excp_file:
-                    excp_file.wrtie(f"\n[519], url:{self.url}, exception:{e}\n")
+                    excp_file.write(f"\n[519], url:{self.url}, exception:{e}\n")
                 email = email_check['$$'][0]['_']
 
             authors_res[index] = {'first_name': first_name, 'last_name': last_name,
@@ -367,7 +367,7 @@ class SearchPage(Page):
             return SearchPage(urljoin('https://' + self.url_parts.netloc, href))
         except AttributeError:
             with open('exceptions.txt', "a") as excp_file:
-                excp_file.wrtie(f"\n[519], url:{self.url}, exception:{e}\n")
+                excp_file.write(f"\n[519], url:{self.url}, exception:{e}\n")
             return None
 
 
@@ -522,7 +522,7 @@ class JournalsSearch(Page):
                 self._pages_count = int(page_counter_text.split('of')[-1])
         except Exception as e:
             with open('exceptions.txt', "a") as excp_file:
-                excp_file.wrtie(f"\n[519], url:{self.url}, exception:{e}\n")
+                excp_file.write(f"\n[519], url:{self.url}, exception:{e}\n")
             print(self.url)
             raise e
         return self._pages_count

@@ -31,5 +31,5 @@ mysql -uroot -p < ./db/scripts/sciencedirect_complete_clear.sql
 # PYTHON
 
 ```
-python3 -m get_sd_ou.app
+python3 -m get_sd_ou.journal_scraper
 ```
