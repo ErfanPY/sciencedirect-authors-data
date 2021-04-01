@@ -45,7 +45,7 @@ def save_article_to_db(article_data, db_connection):
 def get_node_children(node, **kwargs):
 
     if node == "ROOT":
-        yield from iterate_journal_searches(kwargs['start_letter'])
+        yield from iterate_journal_searches(kwargs.get('start_letter', ''))
     elif isinstance(node, JournalsSearch):
         yield from node.iterate_journals()
     elif isinstance(node, Journal):
@@ -131,7 +131,7 @@ if __name__ == "__main__":
     lock = Lock()
 
     article_queue = Queue(maxsize=Config.QUEUE_MAX_SIZE)
-    start_letter = input("Start from which letter: ")
+    start_letter = Config.START_LETTER
     search_thread = Thread(target=deep_first_search_for_articles,
                            args=("ROOT", article_queue, mysql_connection), kwargs={"start_letter":start_letter})
     try:
