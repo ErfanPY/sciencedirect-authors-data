@@ -1,3 +1,4 @@
+import itertools
 import json
 import logging
 import re
@@ -8,6 +9,8 @@ import requests
 from bs4 import BeautifulSoup as bs
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+
+from get_sd_ou.config import Config
 
 logger = logging.getLogger('mainLogger')
 
@@ -24,12 +27,35 @@ http.mount("http://", adapter)
 def my_ip():
     return json.loads(requests.get('http://ip-api.com/json/').content)['query']
 
-def proxy_generator():
-    with open('proxylist.txt') as proxy_file:
-        for line in proxy_file.readlines():
-            yield {'http':'http://'+line.strip()}
-proxy_rotator = proxy_generator()
-global_proxies = {}
+class ProxyHandler:
+    def __init__(self, proxy_list_dir=None):
+        self.proxy_list_dir = proxy_list_dir or Config.PROXY_LIST_DIR
+        self.proxies = self.read_data()
+        self.proxy_rotator = self.proxy_rotaion_generator()
+
+    def rotate(self) -> None:
+        proxy = next(self.proxy_rotator)
+        return {"http": "http://"+proxy}
+
+    def remove(self, proxy):
+        proxy_value = proxy['http'].split("/")[-1]
+        index = self.proxies.index(proxy_value)
+        del self.proxies[index]
+        self.proxies = self.proxies[index:] + self.proxies[:index]
+        self.proxy_rotator = self.proxy_rotaion_generator()
+        
+    def read_data(self):
+        with open(self.proxy_list_dir) as proxy_file:
+            proxies = [proxy.strip() for proxy in proxy_file.readlines()]
+            if not proxies:
+                proxies = [""]
+            return proxies
+
+    def proxy_rotaion_generator(self) -> itertools.cycle:
+        round_robin = itertools.cycle(self.proxies)
+        return round_robin
+
+proxy_rotator = ProxyHandler()
 
 class Url():
     def __init__(self, url, headers={}, **kwargs):
@@ -53,23 +79,26 @@ class Url():
 
     @property
     def response(self):
-        global global_proxies
         if not hasattr(self, '_response'):
-            try:
-                # resp = http.get(self.url, headers=self.headers, proxies=global_proxies)
-                resp = http.get(self.url, headers=self.headers)
-                resp.raise_for_status()
-            except requests.exceptions.RequestException as e:
-                print("Connection refused", e)
-                print(f"headers={self.headers}, proxies={global_proxies}")
-                global_proxies = next(proxy_rotator)
-            except requests.exceptions.Timeout as e:
-                print("Connection TimeOut", e)
-                global_proxies = next(proxy_rotator)
-            else:
-                self._response = resp
+            while True:
+                try:
+                    proxy = proxy_rotator.rotate()
+                    resp = http.get(self.url, headers=self.headers, proxies=proxy)
+                    # resp = http.get(self.url, headers=self.headers)
+                    resp.raise_for_status()
 
-        return self._response
+                except requests.exceptions.RequestException as e:
+                    proxy_rotator.remove(proxy)
+                    print("Connection refused", e)
+                    print(f"headers={self.headers}, proxies={global_proxies}")
+
+                except requests.exceptions.Timeout as e:
+                    proxy_rotator.remove(proxy)
+                    print("Connection TimeOut", e)
+
+                else:
+                    self._response = resp
+                    return self._response
 
     def __hash__(self):
         return hash(self.url_parts[1:3])
