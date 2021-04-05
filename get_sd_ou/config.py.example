@@ -8,3 +8,5 @@ class Config:
     DATABASE_USER     = None
     DATABASE_PASSWORD = None
     DATABASE_PORT     = None
+
+    PROXY_LIST_DIR = 'get_sd_ou/proxylist.txt'
