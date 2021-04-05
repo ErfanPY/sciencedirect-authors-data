@@ -45,7 +45,7 @@ def save_article_to_db(article_data, db_connection):
 def get_node_children(node, **kwargs):
 
     if node == "ROOT":
-        yield from iterate_journal_searches(kwargs.get('start_letter', ''))
+        yield from iterate_journal_searches(kwargs.get('start_letter', ''), kwargs.get('end_letter', 'z'))
     elif isinstance(node, JournalsSearch):
         yield from node.iterate_journals()
     elif isinstance(node, Journal):
@@ -58,11 +58,13 @@ def get_node_children(node, **kwargs):
         raise Exception(f"Invalid node - ({type(node)}) - {node}")
 
 
-def iterate_journal_searches(start_letter=""):
-    journal_search = JournalsSearch(letter=start_letter)
-    while journal_search:
-        yield journal_search
-        journal_search = journal_search.get_next_page()
+def iterate_journal_searches(start_letter="", endletter="z"):
+    while start_letter < endletter:
+        journal_search = JournalsSearch(letter=start_letter)
+        while journal_search:
+            yield journal_search
+            journal_search = journal_search.get_next_page()
+        start_letter = chr(ord(start_letter)+1)
 
 
 def deep_first_search_for_articles(self_node, article_url_queue, mysql_connection, **kwargs):
@@ -74,7 +76,7 @@ def deep_first_search_for_articles(self_node, article_url_queue, mysql_connectio
             list(map(article_url_queue.put, articles))
         else:
             for child in node_children:
-                deep_first_search_for_articles(self_node=child, article_url_queue=article_url_queue, mysql_connection=mysql_connection)
+                deep_first_search_for_articles(self_node=child, article_url_queue=article_url_queue, mysql_connection=mysql_connection, **kwargs)
         add_to_persistance(self_node.__hash__(), mysql_connection)
     else:
         logger.info(f"[{current_thread().name}] skipped node: {str(self_node)}")
@@ -131,9 +133,12 @@ if __name__ == "__main__":
     lock = Lock()
 
     article_queue = Queue(maxsize=Config.QUEUE_MAX_SIZE)
+    
     start_letter = Config.START_LETTER
+    end_letter   = Config.END_LETTER
+
     search_thread = Thread(target=deep_first_search_for_articles,
-                           args=("ROOT", article_queue, mysql_connection), kwargs={"start_letter":start_letter})
+                           args=("ROOT", article_queue, mysql_connection), kwargs={"start_letter":start_letter, "end_letter":end_letter})
     try:
         search_thread.start()
 

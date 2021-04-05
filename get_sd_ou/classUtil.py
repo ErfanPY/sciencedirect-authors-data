@@ -300,7 +300,7 @@ class Article(Page):
         if not self._authors:
             elements = self.soup.select_one('#author-group').find_all('a')
             authors_data = self._author_from_json()
-            for index, author_element in enumerate(elements):
+            for index, author_element in enumerate(elements[:len(authors_data)]):
                 icons = self._author_icons(author_element)
                 try:
                     authors_data[index]['is_coresponde'] = icons['is_coresponde']

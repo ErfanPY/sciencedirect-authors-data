@@ -2,7 +2,9 @@ class Config:
     THREADS_COUNT  = 10
     LOG_LEVEL      = 20 # OR logging.INFO | Debug = 10
     QUEUE_MAX_SIZE = 500
+    
     START_LETTER = ''
+    END_LETTER   = 'z'
 
     DATABASE_HOST     = localhost
     DATABASE_USER     = root
