@@ -45,6 +45,23 @@ class TestProxy(unittest.TestCase):
                 yield {'http':'http'+line.strip()}
 
     def test_proxy(self):
-        proxy_rotator = self.proxy_generator()
-        global_proxies = next(proxy_rotator)
-        requests.get('https://www.sciencedirect.com/browse/journals-and-books/', proxies=global_proxies, headers=headers)
+        from urllib.request import build_opener, urlopen
+
+        import socks
+        import socket
+        from sockshandler import SocksiPyHandler
+
+        socks.set_default_proxy(socks.SOCKS5, "46.4.96.137", 1080)
+        socket.socket = socks.socksocket
+        
+        default_headers = {'User-Agent' : "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:87.0) Gecko/20100101 Firefox/87.0"}
+        
+        req = Request(url, headers=default_headers)
+        
+        connection = urlopen(req)
+        page_content = connection.read() # All requests will pass through the SOCKS proxy
+        # opener = build_opener(SocksiPyHandler(socks.SOCKS5, "46.4.96.137", 1080))
+        # print (opener.open("http://www.example.com/") )# All requests made by the opener will pass through the SOCKS proxy
+        # proxy_rotator = self.proxy_generator()
+        # global_proxies = next(proxy_rotator)
+        # requests.get('https://www.sciencedirect.com/browse/journals-and-books/', proxies=global_proxies, headers=headers)
