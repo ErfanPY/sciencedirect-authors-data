@@ -6,8 +6,10 @@ from hashlib import sha1
 from urllib.parse import parse_qsl, unquote_plus, urljoin, urlparse
 
 import requests
+import socks
 from bs4 import BeautifulSoup as bs
 from requests.adapters import HTTPAdapter
+from sockshandler import SocksiPyHandler
 from urllib3.util.retry import Retry
 
 from get_sd_ou.config import Config
@@ -35,7 +37,7 @@ class ProxyHandler:
 
     def rotate(self) -> None:
         proxy = next(self.proxy_rotator)
-        return {"http": "http://"+proxy}
+        return proxy
 
     def remove(self, proxy):
         proxy_value = proxy['http'].split("/")[-1]

@@ -1,7 +1,12 @@
+import socket
 import unittest
+from urllib.request import (ProxyHandler, Request, build_opener,
+                            install_opener, urlopen)
 
-from get_sd_ou.classUtil import Article, SearchPage
 import requests
+import socks
+from get_sd_ou.classUtil import Article, SearchPage
+from sockshandler import SocksiPyHandler
 
 
 class TestSearchPage(unittest.TestCase):
@@ -34,34 +39,51 @@ class TestArticle(unittest.TestCase):
             Article(article).get_article_data()
 
 class TestProxy(unittest.TestCase):
-    headers = {
+    
+    def proxy_generator(self):
+        with open('get_sd_ou/proxylist.txt') as proxy_file:
+            for line in proxy_file.readlines():
+                yield {'http':'http://'+line.strip()}
+
+    def test_proxy(self):
+        headers = {
                 'Accept': 'application/json, text/plain, */*',
                 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:80.0) Gecko/20100101 Firefox/80.0'
         }
     
-    def proxy_generator(self):
-        with open('proxylist.txt') as proxy_file:
-            for line in proxy_file.readlines():
-                yield {'http':'http'+line.strip()}
+        proxy_rotator = self.proxy_generator()
+        global_proxies = next(proxy_rotator)
+        print(global_proxies)
+        # resp = requests.get('https://www.sciencedirect.com/browse/journals-and-books/', proxies=global_proxies, headers=headers)
+        resp = requests.get('https://ifconfig.me/all.json', proxies=global_proxies, headers=headers)
+        print(resp)
+        resp.raise_for_status()
+    
+    def test_socks(self):
 
-    def test_proxy(self):
-        from urllib.request import build_opener, urlopen
+        # socks.set_default_proxy(proxy_type=socks.SOCKS5, addr="s.serverp.xyz", port=1080,
+                    #   username="s1panis210", password="88890")
+        
+        socks.set_default_proxy(proxy_type=socks.SOCKS4, addr="110.77.135.112", port=4153)
 
-        import socks
-        import socket
-        from sockshandler import SocksiPyHandler
-
-        socks.set_default_proxy(socks.SOCKS5, "46.4.96.137", 1080)
         socket.socket = socks.socksocket
         
         default_headers = {'User-Agent' : "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:87.0) Gecko/20100101 Firefox/87.0"}
+        req = Request('https://www.sciencedirect.com/browse/journals-and-books/', headers=default_headers)
         
-        req = Request(url, headers=default_headers)
-        
-        connection = urlopen(req)
-        page_content = connection.read() # All requests will pass through the SOCKS proxy
-        # opener = build_opener(SocksiPyHandler(socks.SOCKS5, "46.4.96.137", 1080))
-        # print (opener.open("http://www.example.com/") )# All requests made by the opener will pass through the SOCKS proxy
-        # proxy_rotator = self.proxy_generator()
-        # global_proxies = next(proxy_rotator)
-        # requests.get('https://www.sciencedirect.com/browse/journals-and-books/', proxies=global_proxies, headers=headers)
+        connection = urlopen(req, timeout=2)
+        page_content = connection.read()
+        print(page_content)
+    
+    def test_build_opener(self):
+        opener = build_opener(SocksiPyHandler(socks.SOCKS5, "110.77.135.112", 4153))
+        print (opener.open("https://www.sciencedirect.com/browse/journals-and-books/"))
+
+    def test_urllib(self):
+        proxy_support = ProxyHandler({"http":"http://154.16.202.22:3128"})
+        opener = build_opener(proxy_support)
+        install_opener(opener)
+
+        html = urlopen("https://www.sciencedirect.com/browse/journals-and-books/").read()
+        print(html)
+    
