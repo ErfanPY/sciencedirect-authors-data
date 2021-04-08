@@ -101,7 +101,7 @@ class Url():
                 except requests.exceptions.RequestException as e:
                     proxy_rotator.remove(proxy)
                     print("Connection refused", e)
-                    print(f"headers={self.headers}, proxies={global_proxies}")
+                    print(f"headers={self.headers}, proxies={proxy}")
 
                 except requests.exceptions.Timeout as e:
                     proxy_rotator.remove(proxy)
