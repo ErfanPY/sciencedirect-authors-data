@@ -2,6 +2,7 @@ import itertools
 import json
 import logging
 import re
+# import socket
 from hashlib import sha1
 from urllib.parse import parse_qsl, unquote_plus, urljoin, urlparse
 
@@ -32,30 +33,38 @@ def my_ip():
 class ProxyHandler:
     def __init__(self, proxy_list_dir=None):
         self.proxy_list_dir = proxy_list_dir or Config.PROXY_LIST_DIR
-        self.proxies = self.read_data()
         self.proxy_rotator = self.proxy_rotaion_generator()
+
+        # self.set_proxy()
+        # socket.socket = socks.socksocket
+        
+    def remove(self):
+        pass # Not implemented yet.
 
     def rotate(self) -> None:
         proxy = next(self.proxy_rotator)
+        # self.set_proxy(proxy)
+
         return proxy
 
-    def remove(self, proxy):
-        proxy_value = proxy['http'].split("/")[-1]
-        index = self.proxies.index(proxy_value)
-        del self.proxies[index]
-        self.proxies = self.proxies[index:] + self.proxies[:index]
-        self.proxy_rotator = self.proxy_rotaion_generator()
-        
-    def read_data(self):
+    def proxy_rotaion_generator(self) -> itertools.cycle:
         with open(self.proxy_list_dir) as proxy_file:
             proxies = [proxy.strip() for proxy in proxy_file.readlines()]
             if not proxies:
                 proxies = [""]
-            return proxies
+            
+            round_robin = itertools.cycle(proxies)
+            return round_robin
 
-    def proxy_rotaion_generator(self) -> itertools.cycle:
-        round_robin = itertools.cycle(self.proxies)
-        return round_robin
+    @staticmethod
+    def set_proxy(proxy:str="") -> None:
+        if not ':' in proxy:
+            host = port = None
+        else:
+            host, port = proxy.split(":")
+            port = int(port)
+
+        socks.set_default_proxy(socks.SOCKS5, host, port)
 
 proxy_rotator = ProxyHandler()
 
@@ -85,7 +94,7 @@ class Url():
             while True:
                 try:
                     proxy = proxy_rotator.rotate()
-                    resp = http.get(self.url, headers=self.headers, proxies=proxy)
+                    resp = http.get(self.url, headers=self.headers, proxies={"http":proxy})
                     # resp = http.get(self.url, headers=self.headers)
                     resp.raise_for_status()
 
