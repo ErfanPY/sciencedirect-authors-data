@@ -280,7 +280,11 @@ class Article(Page):
             affiliations_id_list = [ref['$']['refid'] for ref in reference_list if 'aff' in ref['$']['refid']]
             affiliation_text = ''
             for affiliation_id in affiliations_id_list:
-                affiliation_json = affiliations_data_dict[affiliation_id]
+                affiliation_json = affiliations_data_dict.get(affiliation_id)
+                
+                if affiliation_json is None:
+                    continue
+
                 affiliation_fn = list(filter(lambda dict: dict['#name'] == 'textfn', affiliation_json['$$']))[0]
                 if affiliation_fn.get('$$'):
                     affiliation_text_list = list(filter(lambda dict: dict['#name'] == '__text__', affiliation_fn['$$']))
