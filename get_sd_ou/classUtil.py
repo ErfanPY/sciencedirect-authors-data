@@ -115,7 +115,7 @@ class Url():
         return hash(self.url_parts[1:3])
 
     def __str__(self):
-        return self.url_parts[1:3]
+        return "".join(self.url_parts[1:3]).strip()
 
 class Page(Url):
     def __init__(self, url, soup_data=None, **kwargs):
