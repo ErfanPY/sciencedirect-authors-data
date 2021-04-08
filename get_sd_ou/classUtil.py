@@ -327,8 +327,11 @@ class Article(Page):
 
     @property
     def title(self):
-        if not self._title:
-            self._title = self.soup.select_one('.title-text').text
+        if self._title is None:
+            title_box = self.soup.select_one('.title-text')
+            if title_box is None:
+               title_box = self.soup.select_one(".reference")
+            self._title = title_box.text
         return self._title
 
 
