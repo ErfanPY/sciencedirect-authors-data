@@ -81,7 +81,7 @@ class TestProxy(unittest.TestCase):
             except requests.exceptions.RequestException as e:
                 # proxy_rotator.remove(proxy)
                 print("Connection refused", e)
-                print("headers={self.headers}, proxies={global_proxies}".format())
+                print(f"headers={self.headers}, proxies={global_proxies}")
 
             except urllib.error.URLError as e:
                 # proxy_rotator.remove(proxy)
