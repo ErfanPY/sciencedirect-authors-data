@@ -38,7 +38,7 @@ class ProxyHandler:
         # self.set_proxy()
         # socket.socket = socks.socksocket
         
-    def remove(self):
+    def remove(self, *args, **kwargs):
         pass # Not implemented yet.
 
     def rotate(self) -> None:
