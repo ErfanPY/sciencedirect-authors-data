@@ -29,7 +29,7 @@ def scrape_and_save_article(article_url_queue, mysql_connection):
 def scrape_article_url(url):
 
     article = Article(url=url)
-    article_hash = article.__hash__()
+    article_hash = str(article).strip()
     if not article_hash in visited:
         article_data = article.get_article_data()
 
@@ -77,14 +77,14 @@ def deep_first_search_for_articles(self_node, article_url_queue, mysql_connectio
         else:
             for child in node_children:
                 deep_first_search_for_articles(self_node=child, article_url_queue=article_url_queue, mysql_connection=mysql_connection, **kwargs)
-        add_to_persistance(self_node.__hash__(), mysql_connection)
+        add_to_persistance(str(self_node).strip(), mysql_connection)
     else:
         logger.info(f"[{current_thread().name}] skipped node: {str(self_node)}")
 
 def init_persistance():
     mysql_connection = init_db()
     mysql_cursor = mysql_connection.cursor()
-    results = mysql_cursor.execute("create table if not exists sciencedirect.visited (hash BIGINT);")
+    results = mysql_cursor.execute("create table if not exists sciencedirect.visited (hash VARCHAR(512));")
     mysql_connection.commit()
 
     print("persistance made")

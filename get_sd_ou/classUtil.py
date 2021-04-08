@@ -94,7 +94,7 @@ class Url():
             while True:
                 try:
                     proxy = proxy_rotator.rotate()
-                    resp = http.get(self.url, headers=self.headers, proxies={"http":proxy})
+                    resp = requests.get(self.url, headers=self.headers, proxies={"http":proxy})
                     # resp = http.get(self.url, headers=self.headers)
                     resp.raise_for_status()
 
@@ -115,7 +115,7 @@ class Url():
         return hash(self.url_parts[1:3])
 
     def __str__(self):
-        return f"url: {self.url}, hash: {self.__hash__()}"
+        return self.url_parts[1:3]
 
 class Page(Url):
     def __init__(self, url, soup_data=None, **kwargs):
