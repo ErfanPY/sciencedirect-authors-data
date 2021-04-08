@@ -25,6 +25,10 @@ class TestSearchPage(unittest.TestCase):
         self.assertEqual(result[0:3] + result[-3:], excpected_result)
     
 class TestArticle(unittest.TestCase):
+    def test_Article(self):
+        article_url = "https://www.sciencedirect.com/science/article/pii/S2352340919301441"
+        article = Article(article_url).get_article_data()
+
     def test_authorIndexError(self):
         articles = ['https://www.sciencedirect.com/science/article/pii/S1876285920300772',
             'https://www.sciencedirect.com/science/article/pii/S1876285920300802',

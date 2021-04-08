@@ -86,7 +86,7 @@ class Url():
         self.url_parts = url_parts._replace(query=_query, path=_path)
 
     def join_url_path_to_self_netloc(self, url_path):
-        return urljoin('https://' + self.url_parts.netloc, url_path)
+        return urljoin('socks5://' + self.url_parts.netloc, url_path)
 
     @property
     def response(self):
