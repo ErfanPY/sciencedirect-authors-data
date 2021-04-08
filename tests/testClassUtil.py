@@ -1,13 +1,11 @@
 import socket
 import unittest
-from urllib.request import (ProxyHandler, Request, build_opener,
-                            install_opener, urlopen)
-
+from urllib.request import (Request, urlopen)
+import urllib
 import requests
 import socks
-from get_sd_ou.classUtil import Article, SearchPage
-from sockshandler import SocksiPyHandler
-
+from get_sd_ou.classUtil import Article, SearchPage, ProxyHandler
+import get_sd_ou.classUtil
 
 class TestSearchPage(unittest.TestCase):
     def test_get_articles(self):
@@ -46,44 +44,49 @@ class TestProxy(unittest.TestCase):
                 yield {'http':'http://'+line.strip()}
 
     def test_proxy(self):
-        headers = {
-                'Accept': 'application/json, text/plain, */*',
-                'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:80.0) Gecko/20100101 Firefox/80.0'
-        }
-    
-        proxy_rotator = self.proxy_generator()
-        global_proxies = next(proxy_rotator)
-        print(global_proxies)
-        # resp = requests.get('https://www.sciencedirect.com/browse/journals-and-books/', proxies=global_proxies, headers=headers)
-        resp = requests.get('https://ifconfig.me/all.json', proxies=global_proxies, headers=headers)
-        print(resp)
-        resp.raise_for_status()
-    
-    def test_socks(self):
+        handler = ProxyHandler("get_sd_ou/proxylist.txt")
 
-        # socks.set_default_proxy(proxy_type=socks.SOCKS5, addr="s.serverp.xyz", port=1080,
-                    #   username="s1panis210", password="88890")
+        self.assertEqual(socket.socket.default_proxy[:2], (None, None))
+        handler.rotate()
+        self.assertEqual(socket.socket.default_proxy[:2], ('127.0.0.1', "1111"))
+        handler.rotate()
+        self.assertEqual(socket.socket.default_proxy[:2], ('127.0.0.1', "2222"))
         
-        socks.set_default_proxy(proxy_type=socks.SOCKS4, addr="110.77.135.112", port=4153)
-
-        socket.socket = socks.socksocket
-        
-        default_headers = {'User-Agent' : "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:87.0) Gecko/20100101 Firefox/87.0"}
-        req = Request('https://www.sciencedirect.com/browse/journals-and-books/', headers=default_headers)
-        
-        connection = urlopen(req, timeout=2)
-        page_content = connection.read()
-        print(page_content)
+        handler.set_proxy() # Clean up
     
-    def test_build_opener(self):
-        opener = build_opener(SocksiPyHandler(socks.SOCKS5, "110.77.135.112", 4153))
-        print (opener.open("https://www.sciencedirect.com/browse/journals-and-books/"))
-
     def test_urllib(self):
-        proxy_support = ProxyHandler({"http":"http://154.16.202.22:3128"})
-        opener = build_opener(proxy_support)
-        install_opener(opener)
+        url = "https://www.sciencedirect.com/science/article/pii/S1876285920300772"
+        handler = ProxyHandler("get_sd_ou/proxylist.txt")
+        handler.rotate()
 
-        html = urlopen("https://www.sciencedirect.com/browse/journals-and-books/").read()
-        print(html)
-    
+        default_headers = {'User-Agent' : "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:87.0) Gecko/20100101 Firefox/87.0"}
+        
+        req = Request(url, headers=default_headers)
+        
+        connection = urlopen(req)
+        page_content = connection.read()
+
+    def test_proxy_list(self):
+        proxy_rotator = ProxyHandler("get_sd_ou/proxylist.txt")
+        url = "https://www.sciencedirect.com/science/article/pii/S1876285920300772"
+        while True:
+            try:
+                proxy = proxy_rotator.rotate()
+                default_headers = {'User-Agent' : "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:87.0) Gecko/20100101 Firefox/87.0"}
+        
+                req = Request(url, headers=default_headers)
+        
+                connection = urlopen(req, timeout=10)
+                page_content = connection.read()
+            except requests.exceptions.RequestException as e:
+                # proxy_rotator.remove(proxy)
+                print("Connection refused", e)
+                print(f"headers={self.headers}, proxies={global_proxies}")
+
+            except urllib.error.URLError as e:
+                # proxy_rotator.remove(proxy)
+                print("Connection TimeOut", e)
+
+            else:
+                self._response = resp
+                
