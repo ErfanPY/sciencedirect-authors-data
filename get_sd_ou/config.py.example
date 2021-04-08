@@ -6,9 +6,12 @@ class Config:
     START_LETTER = ''
     END_LETTER   = 'z'
 
-    DATABASE_HOST     = localhost
-    DATABASE_USER     = root
-    DATABASE_PASSWORD = 
-    DATABASE_PORT     = 3306
+    DATABASE_HOST     = "localhost"
+    DATABASE_USER     = "root"
+    DATABASE_PASSWORD = ""
+    DATABASE_PORT     = "3306"
 
-    PROXY_LIST_DIR = 'get_sd_ou/proxylist.txt'
+    PROXIES_DIR = {'http':"proxies/http.txt",
+                   'socks4':"proxies/socks4.txt",
+                   'socks5':"proxies/socks5.txt",
+                   }
