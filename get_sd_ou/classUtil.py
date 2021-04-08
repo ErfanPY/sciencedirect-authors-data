@@ -2,48 +2,26 @@ import itertools
 import json
 import logging
 import re
-# import socket
 from hashlib import sha1
 from urllib.parse import parse_qsl, unquote_plus, urljoin, urlparse
 
 import requests
-import socks
 from bs4 import BeautifulSoup as bs
-from requests.adapters import HTTPAdapter
-from sockshandler import SocksiPyHandler
-from urllib3.util.retry import Retry
 
 from get_sd_ou.config import Config
 
 logger = logging.getLogger('mainLogger')
 
-retry_strategy = Retry(
-    total=3,
-    status_forcelist=[429, 500, 502, 503, 504],
-    method_whitelist=["HEAD", "GET", "OPTIONS"]
-)
-adapter = HTTPAdapter(max_retries=retry_strategy, pool_maxsize=20)
-http = requests.Session()
-http.mount("https://", adapter)
-http.mount("http://", adapter)
-
-def my_ip():
-    return json.loads(requests.get('http://ip-api.com/json/').content)['query']
-
 class ProxyHandler:
-    def __init__(self, proxy_list_dir=None):
-        self.proxy_list_dir = proxy_list_dir or Config.PROXY_LIST_DIR
+    def __init__(self, proxy_list_dir=None, proxy_type="http"):
+        self.proxy_list_dir = proxy_list_dir or Config.PROXIES_DIR[proxy_type]
         self.proxy_rotator = self.proxy_rotaion_generator()
 
-        # self.set_proxy()
-        # socket.socket = socks.socksocket
-        
     def remove(self, *args, **kwargs):
         pass # Not implemented yet.
 
     def rotate(self) -> None:
         proxy = next(self.proxy_rotator)
-        # self.set_proxy(proxy)
 
         return proxy
 
@@ -55,16 +33,6 @@ class ProxyHandler:
             
             round_robin = itertools.cycle(proxies)
             return round_robin
-
-    @staticmethod
-    def set_proxy(proxy:str="") -> None:
-        if not ':' in proxy:
-            host = port = None
-        else:
-            host, port = proxy.split(":")
-            port = int(port)
-
-        socks.set_default_proxy(socks.SOCKS5, host, port)
 
 proxy_rotator = ProxyHandler()
 
@@ -86,7 +54,7 @@ class Url():
         self.url_parts = url_parts._replace(query=_query, path=_path)
 
     def join_url_path_to_self_netloc(self, url_path):
-        return urljoin('socks5://' + self.url_parts.netloc, url_path)
+        return urljoin('https://' + self.url_parts.netloc, url_path)
 
     @property
     def response(self):
@@ -94,7 +62,10 @@ class Url():
             while True:
                 try:
                     proxy = proxy_rotator.rotate()
-                    resp = requests.get(self.url, headers=self.headers, proxies={"http":proxy})
+                    proxies = {
+                       'https' : f'http://' + line.strip(),
+                    }
+                    resp = requests.get(self.url, headers=self.headers, proxies=proxies)
                     # resp = http.get(self.url, headers=self.headers)
                     resp.raise_for_status()
 
@@ -117,6 +88,9 @@ class Url():
     def __str__(self):
         return "".join(self.url_parts[1:3]).strip()
 
+    def __bool__(self):
+        return self.url and self.url != ''
+
 class Page(Url):
     def __init__(self, url, soup_data=None, **kwargs):
         logger.debug('[ Page ] __init__ | url: %s', url)
@@ -127,17 +101,6 @@ class Page(Url):
         self._soup = None
         if soup_data:
             self._soup = soup_data
-
-    def get_urls(self, include=[]):
-        res_urls = []
-        link_divs = self.soup.find_all('a')
-
-        for div in link_divs:
-            href = div.get('href')
-            if href and all([i in href for i in include]):
-                res_urls.append(urljoin(self.url, href))
-
-        return res_urls
 
     @property
     def soup(self):
@@ -359,11 +322,6 @@ class SearchPage(Page):
         self.offset = self.offset if self.offset != '' else 0
         self.search_kwargs['offset'] = self.offset
 
-    def db_hash(self):
-        return sha1(json.dumps(self.search_kwargs, sort_keys=True, ensure_ascii=False).encode('utf-8')).hexdigest()
-
-    def __bool__(self):
-        return self.url != ''
 
     def get_articles(self):
         logger.debug('[ SearchPage ] getting articles | url: %s', self.url)
@@ -427,9 +385,6 @@ class Volume(SearchPage):
 
         return previous_volume.get('href', False)
 
-    def get_next(self):
-        pass
-
 
 class Journal(Page):
     def __init__(self, url='', journal_name='', page_kwargs={}, **kwargs):
@@ -452,11 +407,6 @@ class Journal(Page):
         self.search_kwargs['page'] = self.page
         self.journal_name = journal_name if journal_name else self.soup.select_one('.anchor-text').text
 
-    def db_hash(self):
-        return sha1(json.dumps(self.search_kwargs, sort_keys=True, ensure_ascii=False).encode('utf-8')).hexdigest()
-
-    def __bool__(self):
-        return self.url != ''
 
     def iterate_volumes(self):
         last_issue_url = self.get_last_issue_url()
@@ -524,12 +474,6 @@ class JournalsSearch(Page):
         self.page_num = int(self.page_num) if self.page_num != '' else 1
         self.search_kwargs['page'] = self.page_num
         self._pages_count = None
-
-    def db_hash(self):
-        return sha1(json.dumps(self.search_kwargs, sort_keys=True, ensure_ascii=False).encode('utf-8')).hexdigest()
-
-    def __bool__(self):
-        return self.url != ''
 
     def iterate_journals(self):
         journals = self._get_page_journals(self)
