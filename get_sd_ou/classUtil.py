@@ -101,7 +101,7 @@ class Url():
                 except requests.exceptions.RequestException as e:
                     proxy_rotator.remove(proxy)
                     print("Connection refused", e)
-                    print(f"headers={self.headers}, proxies={global_proxies}")
+                    print("headers={self.headers}, proxies={global_proxies}".format())
 
                 except requests.exceptions.Timeout as e:
                     proxy_rotator.remove(proxy)
@@ -115,7 +115,7 @@ class Url():
         return hash(self.url_parts[1:3])
 
     def __str__(self):
-        return f"url: {self.url}, hash: {self.__hash__()}"
+        return "url: {self.url}, hash: {self.__hash__()}".format()
 
 class Page(Url):
     def __init__(self, url, soup_data=None, **kwargs):
@@ -148,7 +148,7 @@ class Page(Url):
         content = self.response.content
         self._soup = bs(content, 'html.parser')
 
-        logger.debug(f'[ Page ] soup made | len_soup: {len(str(self._soup))}')
+        logger.debug('[ Page ] soup made | len_soup: {len(str(self._soup))}'.format())
         return self._soup
 
 
@@ -174,7 +174,7 @@ class Author(dict):
         if not inputs:
             return None
         self['id'] = inputs.get('value')
-        return f"https://www.scopus.com/authid/detail.uri?authorId={self['id']}"
+        return "https://www.scopus.com/authid/detail.uri?authorId={self['id']}".format()
 
     def __str__(self) -> str:
         return self.first_name + self.last_name
@@ -236,7 +236,7 @@ class Article(Page):
                 'keywords': self.keywords}
         except Exception as e:
             with open('exceptions.txt', "a") as excp_file:
-                excp_file.write(f"\n[519], url:{self.url}, exception:{e}\n")
+                excp_file.write("\n[519], url:{self.url}, exception:{e}\n".format())
             print(self.url)
             raise e
 
@@ -244,8 +244,8 @@ class Article(Page):
 
     def export_bibtex(self):
         self.bibtex_url = Url(
-            f'https://www.sciencedirect.com/sdfe/arp/cite?pii={self.pii}&format=text/x-bibtex&wi')
-        self.bibtex_file_path = f'articles/{self.pii}.bib'
+            'https://www.sciencedirect.com/sdfe/arp/cite?pii={self.pii}&format=text/x-bibtex&wi'.format())
+        self.bibtex_file_path = 'articles/{self.pii}.bib'.format()
         with open(self.bibtex_file_path, 'ab') as f:
             f.write(http.get(self.bibtex_url, headers=self.headers))
         return self.bibtex_url
@@ -298,7 +298,7 @@ class Article(Page):
                 email = email_check['_'] if email_check else None
             except KeyError:
                 with open('exceptions.txt', "a") as excp_file:
-                    excp_file.write(f"\n[519], url:{self.url}, exception:{e}\n")
+                    excp_file.write("\n[519], url:{self.url}, exception:{e}\n".format())
                 email = email_check['$$'][0]['_']
 
             authors_res[index] = {'first_name': first_name, 'last_name': last_name,
@@ -407,7 +407,7 @@ class SearchPage(Page):
             return SearchPage(urljoin('https://' + self.url_parts.netloc, href))
         except AttributeError:
             with open('exceptions.txt', "a") as excp_file:
-                excp_file.write(f"\n[519], url:{self.url}, exception:{e}\n")
+                excp_file.write("\n[519], url:{self.url}, exception:{e}\n".format())
             return None
 
 
@@ -500,7 +500,7 @@ class Journal(Page):
 class JournalsSearch(Page):
     def __init__(self, url='', letter='', start_page=1, soup_data=None, **search_kwargs):
         if not url:
-            url = f'https://www.sciencedirect.com/browse/journals-and-books/{letter}?'
+            url = 'https://www.sciencedirect.com/browse/journals-and-books/{letter}?'.format()
             if start_page != 1: search_kwargs['page'] = start_page
             for key, value in search_kwargs.items():
                 if value:
@@ -562,7 +562,7 @@ class JournalsSearch(Page):
                 self._pages_count = int(page_counter_text.split('of')[-1])
         except Exception as e:
             with open('exceptions.txt', "a") as excp_file:
-                excp_file.write(f"\n[519], url:{self.url}, exception:{e}\n")
+                excp_file.write("\n[519], url:{self.url}, exception:{e}\n".format())
             print(self.url)
             raise e
         return self._pages_count

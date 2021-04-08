@@ -71,7 +71,7 @@ def get_status(cnx):
         cursor.execute(sql)
         result = cursor.fetchone()[0]
         sql_results[table_name] = result
-    logger.info(f'{sql_results}')
+    logger.info('{sql_results}'.format())
     return sql_results
 
 

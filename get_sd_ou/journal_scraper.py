@@ -21,9 +21,9 @@ def scrape_and_save_article(article_url_queue, mysql_connection):
 
             article_url_queue.task_done()
             add_to_persistance(article_hash, mysql_connection)
-            logger.info(f"[{current_thread().name}] - Article scraped and saved - url = {url}")
+            logger.info("[{current_thread().name}] - Article scraped and saved - url = {url}".format())
         else:
-            logger.info(f"[{current_thread().name}] skipped article: {url}")
+            logger.info("[{current_thread().name}] skipped article: {url}".format())
 
 
 def scrape_article_url(url):
@@ -33,13 +33,13 @@ def scrape_article_url(url):
     if not article_hash in visited:
         article_data = article.get_article_data()
 
-        logger.debug(f"thread: ({current_thread().name})[journal_scraper]-[scrape_article_url] | {url}")
+        logger.debug("thread: ({current_thread().name})[journal_scraper]-[scrape_article_url] | {url}".format())
         return article_data, article_hash
     return None, None
 
 def save_article_to_db(article_data, db_connection):
     article_id = insert_article_data(**article_data, cnx=db_connection)
-    logger.debug(f"thread: ({current_thread().name})[journal_scraper]-[save_article_to_db] | {article_id}")
+    logger.debug("thread: ({current_thread().name})[journal_scraper]-[save_article_to_db] | {article_id}".format())
 
 
 def get_node_children(node, **kwargs):
@@ -55,7 +55,7 @@ def get_node_children(node, **kwargs):
         for article in articles:
             yield article
     else:
-        raise Exception(f"Invalid node - ({type(node)}) - {node}")
+        raise Exception("Invalid node - ({type(node)}) - {node}".format())
 
 
 def iterate_journal_searches(start_letter="", endletter="z"):
@@ -79,7 +79,7 @@ def deep_first_search_for_articles(self_node, article_url_queue, mysql_connectio
                 deep_first_search_for_articles(self_node=child, article_url_queue=article_url_queue, mysql_connection=mysql_connection, **kwargs)
         add_to_persistance(self_node.__hash__(), mysql_connection)
     else:
-        logger.info(f"[{current_thread().name}] skipped node: {str(self_node)}")
+        logger.info("[{current_thread().name}] skipped node: {str(self_node)}".format())
 
 def init_persistance():
     mysql_connection = init_db()
@@ -97,7 +97,7 @@ def add_to_persistance(item, cnx):
     visited.add(int(item))
     lock.release()
     cursor = cnx.cursor()
-    res = cursor.execute(f'INSERT INTO sciencedirect.visited VALUES ({int(item)});')
+    res = cursor.execute('INSERT INTO sciencedirect.visited VALUES ({int(item)});'.format())
     cnx.commit()
 
 
@@ -106,7 +106,7 @@ def write_visited(write_set, mysql_connection=None):
     res = None
     cursor = mysql_connection.cursor()
     for i in write_set:
-        res = cursor.execute(f'INSERT INTO sciencedirect.visited VALUES ({int(i)});')
+        res = cursor.execute('INSERT INTO sciencedirect.visited VALUES ({int(i)});'.format())
     mysql_connection.commit()
     
     print(res)
