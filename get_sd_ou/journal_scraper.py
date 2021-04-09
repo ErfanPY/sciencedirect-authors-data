@@ -94,10 +94,10 @@ def init_persistance():
 
 def add_to_persistance(item, cnx):
     lock.acquire()
-    visited.add(int(item))
+    visited.add(str(item))
     lock.release()
     cursor = cnx.cursor()
-    res = cursor.execute(f'INSERT INTO sciencedirect.visited VALUES ({int(item)});')
+    res = cursor.execute(f'INSERT INTO sciencedirect.visited VALUES ({str(item)});')
     cnx.commit()
 
 
@@ -106,7 +106,7 @@ def write_visited(write_set, mysql_connection=None):
     res = None
     cursor = mysql_connection.cursor()
     for i in write_set:
-        res = cursor.execute(f'INSERT INTO sciencedirect.visited VALUES ({int(i)});')
+        res = cursor.execute(f'INSERT INTO sciencedirect.visited VALUES ({str(i)});')
     mysql_connection.commit()
     
     print(res)
