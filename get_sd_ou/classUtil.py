@@ -63,7 +63,7 @@ class Url():
                 try:
                     proxy = proxy_rotator.rotate()
                     proxies = {
-                       'https' : f'http://' + line.strip(),
+                       'https' : f'http://' + proxy,
                     }
                     resp = requests.get(self.url, headers=self.headers, proxies=proxies)
                     # resp = http.get(self.url, headers=self.headers)
