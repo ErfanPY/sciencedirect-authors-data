@@ -14,11 +14,12 @@ logger = logging.getLogger('mainLogger')
 
 class ProxyHandler:
     def __init__(self, proxy_list_dir=None, proxy_type="http"):
+        self.banned_proxies = []
         self.proxy_list_dir = proxy_list_dir or Config.PROXIES_DIR[proxy_type]
         self.proxy_rotator = self.proxy_rotaion_generator()
 
-    def remove(self, *args, **kwargs):
-        pass # Not implemented yet.
+    def remove(self, proxy):
+        self.banned_proxies.append(proxy)
 
     def rotate(self) -> None:
         proxy = next(self.proxy_rotator)
@@ -27,12 +28,13 @@ class ProxyHandler:
 
     def proxy_rotaion_generator(self) -> itertools.cycle:
         with open(self.proxy_list_dir) as proxy_file:
-            proxies = [proxy.strip() for proxy in proxy_file.readlines()]
-            if not proxies:
-                proxies = [""]
-            
-            round_robin = itertools.cycle(proxies)
-            return round_robin
+            while True:
+                proxy = proxy_file.readline().strip()
+                if proxy in banned:
+                    continue
+                if not proxy:
+                    proxy_file.seek(0)
+                yield proxy or None
 
 proxy_rotator = ProxyHandler()
 
@@ -61,15 +63,19 @@ class Url():
         if not hasattr(self, '_response'):
             while True:
                 try:
-                    proxy = proxy_rotator.rotate()
+                    resp = None
+                    proxy_addrs = proxy_rotator.rotate()
+                    proxy = 'http://' + proxy_addrs if proxy_addrs else None
                     proxies = {
-                       'https' : f'http://' + proxy,
+                       'https' : proxy,
                     }
                     resp = requests.get(self.url, headers=self.headers, proxies=proxies)
                     # resp = http.get(self.url, headers=self.headers)
                     resp.raise_for_status()
 
                 except requests.exceptions.RequestException as e:
+                    if resp and resp.status_code == 404:
+                        return None
                     proxy_rotator.remove(proxy)
                     print("Connection refused", e)
                     print(f"headers={self.headers}, proxies={proxy}")
@@ -108,8 +114,10 @@ class Page(Url):
             logger.debug('[ Page ] soup exist | url: %s', self.url)
             return self._soup
 
-        content = self.response.content
-        self._soup = bs(content, 'html.parser')
+        url_response = self.response
+        if url_response is None:
+            return None
+        self._soup = bs(url_response.content, 'html.parser')
 
         logger.debug(f'[ Page ] soup made | len_soup: {len(str(self._soup))}')
         return self._soup
@@ -325,7 +333,9 @@ class SearchPage(Page):
 
     def get_articles(self):
         logger.debug('[ SearchPage ] getting articles | url: %s', self.url)
-        search_result = self.soup.find_all('a')
+        if self.soup is None:
+            return []
+        search_result = soup.find_all('a')
         articles = []
         for article in search_result:
             if article.get('href'):
@@ -425,7 +435,7 @@ class Journal(Page):
                 previous_issue_path = previous_issue.get_previous()
         else:
             return []
-
+        return []
 
     def get_last_issue_url(self):
         # Sciencedirect return last issue url whene requests outof boundry issue number
