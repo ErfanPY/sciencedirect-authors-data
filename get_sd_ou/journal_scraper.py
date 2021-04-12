@@ -68,23 +68,27 @@ def iterate_journal_searches(start_letter="", endletter="z"):
 
 
 def deep_first_search_for_articles(self_node, article_url_queue, mysql_connection, **kwargs):
-    if not self_node.__hash__() in visited:
+    if not str(self_node) in visited:
         node_children = get_node_children(self_node, **kwargs)
 
         if isinstance(self_node, Volume):  # deepest node of tree before articles is Volume
             articles = list(node_children)
-            list(map(article_url_queue.put, articles))
+            a = [add_to_persistance(str(self_node).strip(), mysql_connection) for self_node in articles]
+            # list(map(article_url_queue.put, articles))
         else:
             for child in node_children:
                 deep_first_search_for_articles(self_node=child, article_url_queue=article_url_queue, mysql_connection=mysql_connection, **kwargs)
         add_to_persistance(str(self_node).strip(), mysql_connection)
+        logger.info(f"[{current_thread().name}] Got node children: [{type(self_node)}] {str(self_node).strip()}")
     else:
         logger.info(f"[{current_thread().name}] skipped node: {str(self_node)}")
+
+
 
 def init_persistance():
     mysql_connection = init_db()
     mysql_cursor = mysql_connection.cursor()
-    results = mysql_cursor.execute("create table if not exists sciencedirect.visited (hash VARCHAR(512));")
+    results = mysql_cursor.execute("CREATE TABLE if not exists sciencedirect.visited (hash VARCHAR(512) UNIQUE);")
     mysql_connection.commit()
 
     print("persistance made")
@@ -97,9 +101,9 @@ def add_to_persistance(item, cnx):
     visited.add(str(item))
     lock.release()
     cursor = cnx.cursor()
-    res = cursor.execute(f'INSERT INTO sciencedirect.visited VALUES (hash) ({str(item)});')
+    # res = cursor.execute(f"INSERT INTO sciencedirect.visited (hash) VALUES ('%s');", str(item))
+    res = cursor.execute(f"INSERT IGNORE INTO sciencedirect.visited VALUES (%s);", (str(item), ))
     cnx.commit()
-
 
 
 def write_visited(write_set, mysql_connection=None):
@@ -141,14 +145,14 @@ if __name__ == "__main__":
                            args=("ROOT", article_queue, mysql_connection), kwargs={"start_letter":start_letter, "end_letter":end_letter})
     try:
         search_thread.start()
+        search_thread.join()
+    #     for i in range(Config.THREADS_COUNT):
+    #         mysql_connection = init_persistance()
 
-        for i in range(Config.THREADS_COUNT):
-            mysql_connection = init_persistance()
+    #         t = Thread(target=scrape_and_save_article, args=(article_queue, mysql_connection))
+    #         t.start()
 
-            t = Thread(target=scrape_and_save_article, args=(article_queue, mysql_connection))
-            t.start()
-
-        article_queue.join()
+    #     article_queue.join()
     except Exception as e:
         print(e)
         print("EXCEPTION")
