@@ -15,3 +15,5 @@ class Config:
                    'socks4':"proxies/socks4.txt",
                    'socks5':"proxies/socks5.txt",
                    }
+    
+    USE_PROXY = False
