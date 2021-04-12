@@ -30,7 +30,7 @@ class ProxyHandler:
         with open(self.proxy_list_dir) as proxy_file:
             while True:
                 proxy = proxy_file.readline().strip()
-                if proxy in banned:
+                if proxy in self.banned_proxies:
                     continue
                 if not proxy:
                     proxy_file.seek(0)
@@ -66,15 +66,19 @@ class Url():
                     resp = None
                     proxy_addrs = proxy_rotator.rotate()
                     proxy = 'http://' + proxy_addrs if proxy_addrs else None
-                    proxies = {
-                       'https' : proxy,
-                    }
+
+                    if Config.USE_PROXY:
+                        proxies = {
+                        'https' : proxy,
+                        }
+                    else:
+                        proxies = {"https": None}
                     resp = requests.get(self.url, headers=self.headers, proxies=proxies)
                     # resp = http.get(self.url, headers=self.headers)
                     resp.raise_for_status()
 
                 except requests.exceptions.RequestException as e:
-                    if resp and resp.status_code == 404:
+                    if not resp and resp.status_code == 404:
                         return None
                     proxy_rotator.remove(proxy)
                     print("Connection refused", e)
@@ -87,7 +91,9 @@ class Url():
                 else:
                     self._response = resp
                     return self._response
-
+                if not Config.USE_PROXY :
+                    return None
+        return  self._response
     def __hash__(self):
         return hash(self.url_parts[1:3])
 
@@ -271,7 +277,7 @@ class Article(Page):
             email_check = filter_list_in_dict(author_json['$$'], '#name', 'e-address', just_first=True)
             try:
                 email = email_check['_'] if email_check else None
-            except KeyError:
+            except KeyError as e:
                 with open('exceptions.txt', "a") as excp_file:
                     excp_file.write(f"\n[519], url:{self.url}, exception:{e}\n")
                 email = email_check['$$'][0]['_']
@@ -335,7 +341,7 @@ class SearchPage(Page):
         logger.debug('[ SearchPage ] getting articles | url: %s', self.url)
         if self.soup is None:
             return []
-        search_result = soup.find_all('a')
+        search_result = self.soup.find_all('a')
         articles = []
         for article in search_result:
             if article.get('href'):
@@ -391,7 +397,10 @@ class Volume(SearchPage):
         super().__init__(url=url, **kwargs)
 
     def get_previous(self):
-        previous_volume = self.soup.select_one('.u-padding-xs-hor > div:nth-child(1) > a:nth-child(1)')
+        soup = self.soup
+        if soup is None:
+            return None
+        previous_volume = soup.select_one('.u-padding-xs-hor > div:nth-child(1) > a:nth-child(1)')
 
         return previous_volume.get('href', False)
 
@@ -422,6 +431,9 @@ class Journal(Page):
         last_issue_url = self.get_last_issue_url()
         if not last_issue_url is None:
             last_issue = Volume(url=last_issue_url)
+            
+            if last_issue.response is None :
+                return []
 
             yield last_issue
             previous_issue_url = ''
