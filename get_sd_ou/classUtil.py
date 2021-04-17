@@ -386,7 +386,7 @@ class SearchPage(Page):
         try:
             href = next_url.get('href')
             return SearchPage(urljoin('https://' + self.url_parts.netloc, href))
-        except AttributeError:
+        except AttributeError as e:
             with open('exceptions.txt', "a") as excp_file:
                 excp_file.write(f"\n[519], url:{self.url}, exception:{e}\n")
             return None
@@ -400,8 +400,12 @@ class Volume(SearchPage):
         soup = self.soup
         if soup is None:
             return None
+        
         previous_volume = soup.select_one('.u-padding-xs-hor > div:nth-child(1) > a:nth-child(1)')
-
+        
+        if previous_volume is None:
+            return None
+        
         return previous_volume.get('href', False)
 
 
@@ -424,7 +428,7 @@ class Journal(Page):
         self.page = self.query.get('page')
         self.page = self.page if self.page != '' else 1
         self.search_kwargs['page'] = self.page
-        self.journal_name = journal_name if journal_name else self.soup.select_one('.anchor-text').text
+        # self.journal_name = journal_name if journal_name else self.soup.select_one('.anchor-text').text
 
 
     def iterate_volumes(self):
@@ -469,11 +473,11 @@ class Journal(Page):
             self._pages_count = int(page_courser_text.split('of')[-1])
         return self._pages_count
 
-    def next_page(self):
-        if self.current_page_num < self.pages_count:
-            next_journal = Journal(journal_name=self.journal_name, page_kwargs={'page': self.current_page_num + 1},
-                                   **self.kwargs)
-            return next_journal.url
+    # def next_page(self):
+    #     if self.current_page_num < self.pages_count:
+    #         next_journal = Journal(journal_name=self.journal_name, page_kwargs={'page': self.current_page_num + 1},
+    #                                **self.kwargs)
+    #         return next_journal.url
 
 
 class JournalsSearch(Page):
