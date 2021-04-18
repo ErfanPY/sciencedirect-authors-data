@@ -78,7 +78,7 @@ class Url():
                     resp.raise_for_status()
 
                 except requests.exceptions.RequestException as e:
-                    if not resp and resp.status_code == 404:
+                    if resp and resp.status_code == 404:
                         return None
                     proxy_rotator.remove(proxy)
                     print("Connection refused", e)
