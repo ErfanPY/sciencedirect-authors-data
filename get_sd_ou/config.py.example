@@ -1,7 +1,7 @@
 class Config:
-    THREADS_COUNT  = 5
+    THREADS_COUNT  = 1
     LOG_LEVEL      = 20 # OR logging.INFO | Debug = 10
-    QUEUE_MAX_SIZE = 500
+    QUEUE_MAX_SIZE = 100
     
     START_LETTER = ''
     END_LETTER   = 'z'
@@ -17,3 +17,5 @@ class Config:
                    }
     
     USE_PROXY = False
+
+    ARTICLES_URL_PATH = ""
