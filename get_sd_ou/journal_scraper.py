@@ -59,7 +59,7 @@ def get_node_children(node, **kwargs):
 
 
 def iterate_journal_searches(start_letter="", endletter="z"):
-    while start_letter < endletter:
+    while start_letter <= endletter:
         journal_search = JournalsSearch(letter=start_letter)
         while journal_search:
             yield journal_search

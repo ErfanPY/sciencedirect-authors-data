@@ -224,7 +224,7 @@ class Article(Page):
             f'https://www.sciencedirect.com/sdfe/arp/cite?pii={self.pii}&format=text/x-bibtex&wi')
         self.bibtex_file_path = f'articles/{self.pii}.bib'
         with open(self.bibtex_file_path, 'ab') as f:
-            f.write(http.get(self.bibtex_url, headers=self.headers))
+            f.write(requests.get(self.bibtex_url, headers=self.headers))
         return self.bibtex_url
 
     @staticmethod
@@ -535,7 +535,11 @@ class JournalsSearch(Page):
     def pages_count(self):
         try:
             if self._pages_count is None:
-                page_counter_text = self.soup.select_one('.pagination-pages-label').text
+                page_counter_text = self.soup.select_one('.pagination-pages-label')
+                if page_counter_text is None:
+                    return -1
+                else:
+                    page_counter_text = page_counter_text.text
                 self._pages_count = int(page_counter_text.split('of')[-1])
         except Exception as e:
             with open('exceptions.txt', "a") as excp_file:
