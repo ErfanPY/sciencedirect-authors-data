@@ -1,10 +1,11 @@
 from get_sd_ou.config import Config
 from get_sd_ou.classUtil import Article
-from get_sd_ou.databaseUtil import insert_article_data
+from get_sd_ou.databaseUtil import insert_article_data, init_db
 
 with open(Config.ARTICLES_URL_PATH) as art_file:
     url_lines = art_file.readlines()
 
+db_connection = init_db()
 for url_line in url_lines:
     
     url = url_line.strip()
