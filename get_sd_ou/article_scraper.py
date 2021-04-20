@@ -16,7 +16,7 @@ len_articles = len(url_lines)
 for i, url_line in enumerate(url_lines):
     
     if i % 10 == 0:
-        logging.info(f"{i}/{len_articles}")
+        logger.info(f"{i}/{len_articles}")
 
     url = url_line.strip()
     article = Article(url)
