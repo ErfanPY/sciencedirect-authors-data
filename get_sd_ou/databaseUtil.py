@@ -139,3 +139,14 @@ def get_article(pii, cnx=None):
     cursor.reset()
     logger.debug('[databaseUtil][get_article][OUT] | fetch_res : %s', fetch_res)
     return fetch_res
+
+def get_articles(cnx=None):
+    logger.debug('[databaseUtil][get_articles][IN]')
+    cursor = cnx.cursor(buffered=True, dictionary=True)
+    sql = "SELECT * FROM sciencedirect.articles"
+    
+    cursor.execute(sql)
+    fetch_res = cursor.fetchall()
+    cursor.reset()
+    logger.debug('[databaseUtil][get_articles][OUT]')
+    return fetch_res
