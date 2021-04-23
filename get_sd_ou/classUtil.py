@@ -3,6 +3,7 @@ import json
 import logging
 import re
 from hashlib import sha1
+import urllib.request
 from urllib.parse import parse_qsl, unquote_plus, urljoin, urlparse
 
 import requests
@@ -61,39 +62,26 @@ class Url():
     @property
     def response(self):
         if not hasattr(self, '_response'):
-            while True:
-                try:
-                    resp = None
-                    proxy_addrs = proxy_rotator.rotate()
-                    proxy = 'http://' + proxy_addrs if proxy_addrs else None
-
-                    if Config.USE_PROXY:
-                        proxies = {
-                        'https' : proxy,
-                        }
-                    else:
-                        proxies = {"https": None}
-                    resp = requests.get(self.url, headers=self.headers, proxies=proxies)
-                    # resp = http.get(self.url, headers=self.headers)
-                    resp.raise_for_status()
-
-                except requests.exceptions.RequestException as e:
-                    if resp and resp.status_code == 404:
-                        return None
-                    proxy_rotator.remove(proxy)
-                    print("Connection refused", e)
-                    print(f"headers={self.headers}, proxies={proxy}")
-
-                except requests.exceptions.Timeout as e:
-                    proxy_rotator.remove(proxy)
-                    print("Connection TimeOut", e)
-
-                else:
-                    self._response = resp
-                    return self._response
-                if not Config.USE_PROXY :
+            try:
+                req = urllib.request.Request(self.url, headers=self.headers)
+                with urllib.request.urlopen(req) as response:
+                    resp = response.read()
+           
+            except urllib.error.HTTPError as e:
+                if e.code == 404:
                     return None
+                if e.code == 403:
+                    logger.info("403 - Connection Refused | " + e)
+                
+                logger.info(f"Connection Error | {e} | {self.url}")
+                return 0
+
+            else:
+                self._response = resp
+                return self._response
+            
         return  self._response
+        
     def __hash__(self):
         return hash(self.url_parts[1:3])
 
