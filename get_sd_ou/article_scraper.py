@@ -11,9 +11,6 @@ from get_sd_ou.databaseUtil import get_articles, init_db, insert_article_data
 socks.setdefaultproxy(socks.PROXY_TYPE_SOCKS5, "localhost", 8080)
 socket.socket = socks.socksocket
 
-url_obj = Url("https://google.com")
-resp = url_obj.response
-
 logger = logging.getLogger('mainLogger')
 logger.setLevel(Config.LOG_LEVEL)
 
