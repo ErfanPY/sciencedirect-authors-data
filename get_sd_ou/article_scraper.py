@@ -27,7 +27,6 @@ visited_pii = set([article['pii'] for article in get_articles(db_connection)])
 
 skipped_count = 0
 
-failed = []
 
 for i, url_line in enumerate(url_lines):
     
@@ -40,7 +39,8 @@ for i, url_line in enumerate(url_lines):
 
     if not resp:
         if resp == 0:
-            failed.append(url)
+            with open('failed_urls.txt', 'a') as failed:
+                failed.write(url_line)
         continue
     
     soup = bs(resp, 'html.parser')
@@ -56,3 +56,5 @@ for i, url_line in enumerate(url_lines):
     article_data = article.get_article_data()
     if not article_data is None:
         article_id = insert_article_data(**article_data, cnx=db_connection)
+        visited_pii.add(article.pii)
+        
