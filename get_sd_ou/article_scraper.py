@@ -25,15 +25,19 @@ db_connection = init_db()
 len_articles = len(url_lines)
 
 visited_pii = set([article['pii'] for article in get_articles(db_connection)])
+len_visiteds = len(visited_pii)
 
 skipped_count = 0
 errors = 0
+counter = 0
 
 for i, url_line in enumerate(url_lines):
     
     if i % 10 == 0:
-        logger.info(f"{i}/{len_articles} | skipped: {skipped_count} | Errors: {errors}")
-
+        logger.info(f"{i}/{len_articles} | new : {counter} | skipped: {skipped_count} | Errors: {errors} | at_start :{len_visiteds}")
+   if article.pii in visited_pii:
+        skipped_count += 1
+        continue
     url = url_line.strip()
     url_obj = Url(url)
     resp = url_obj.response
@@ -51,12 +55,11 @@ for i, url_line in enumerate(url_lines):
 
     article = Article(url, soup_data=soup)
     
-    if article.pii in visited_pii:
-        skipped_count += 1
-        continue
+ 
 
     article_data = article.get_article_data()
     if not article_data is None:
         article_id = insert_article_data(**article_data, cnx=db_connection)
         visited_pii.add(article.pii)
-        
+    
+    counter += 1
