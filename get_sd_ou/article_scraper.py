@@ -14,7 +14,11 @@ socket.socket = socks.socksocket
 logger = logging.getLogger('mainLogger')
 logger.setLevel(Config.LOG_LEVEL)
 
-with open(Config.ARTICLES_URL_PATH) as art_file:
+import sys
+
+if len(sys.argv) == 2:
+    articles_path = sys.argv[1]
+with open(articles_path or Config.ARTICLES_URL_PATH) as art_file:
     url_lines = set(art_file.readlines())
 
 db_connection = init_db()
