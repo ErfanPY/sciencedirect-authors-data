@@ -23,12 +23,12 @@ len_articles = len(url_lines)
 visited_pii = set([article['pii'] for article in get_articles(db_connection)])
 
 skipped_count = 0
-
+errors = 0
 
 for i, url_line in enumerate(url_lines):
     
     if i % 10 == 0:
-        logger.info(f"{i}/{len_articles} | skipped: {skipped_count}")
+        logger.info(f"{i}/{len_articles} | skipped: {skipped_count} | Errors: {errors}")
 
     url = url_line.strip()
     url_obj = Url(url)
@@ -38,6 +38,7 @@ for i, url_line in enumerate(url_lines):
         if resp == 0:
             with open('failed_urls.txt', 'a') as failed:
                 failed.write(url_line)
+        errors += 1
         continue
     
     soup = bs(resp, 'html.parser')
