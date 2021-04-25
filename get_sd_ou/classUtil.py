@@ -5,6 +5,7 @@ import re
 from hashlib import sha1
 import urllib.request
 from urllib.parse import parse_qsl, unquote_plus, urljoin, urlparse
+import socks
 
 import requests
 from bs4 import BeautifulSoup as bs
@@ -62,25 +63,31 @@ class Url():
     @property
     def response(self):
         if not hasattr(self, '_response'):
-            try:
-                req = urllib.request.Request(self.url, headers=self.headers)
-                with urllib.request.urlopen(req) as response:
-                    resp = response.read()
-           
-            except urllib.error.HTTPError as e:
-                if e.code == 404:
-                    return None
-                if e.code == 403:
-                    logger.info("403 - Connection Refused | " + e)
+            req = urllib.request.Request(self.url, headers=self.headers)
+            getting_data = True
+            while getting_data:
+                try:
+                    with urllib.request.urlopen(req) as response:
+                        resp = response.read()
+            
+                except urllib.error.HTTPError as e:
+                    if e.code == 404:
+                        return None
+                    if e.code == 403:
+                        logger.info("403 - Connection Refused | " + e)
+                    
+                    logger.info(f"Connection Error | {e} | {self.url}")
                 
-                logger.info(f"Connection Error | {e} | {self.url}")
-                return 0
-            except Exception as e:
-                logger.info(f"Unknown Connection Error | {e} | {self.url}")
-                return 0
-            else:
-                self._response = resp
-                return self._response
+                except urllib.error.URLError as e:
+                    print(f"URL Error | {e} | {self.url}")
+                    if not type(e.reason) == socks.ProxyConnectionError:
+                        return 0
+                except Exception as e:
+                    logger.info(f"Unknown Connection Error | {e} | {self.url}")
+                    return 0
+                else:
+                    self._response = resp
+                    return self._response
             
         return  self._response
         
