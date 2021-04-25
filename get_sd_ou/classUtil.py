@@ -75,7 +75,9 @@ class Url():
                 
                 logger.info(f"Connection Error | {e} | {self.url}")
                 return 0
-
+            except Exception as e:
+                logger.info(f"Unknown Connection Error | {e} | {self.url}")
+                return 0
             else:
                 self._response = resp
                 return self._response
