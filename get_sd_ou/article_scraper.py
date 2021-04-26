@@ -39,13 +39,15 @@ for i, url_line in enumerate(url_lines):
     if i % 10 == 0:
         logger.info(f"{i}/{len_articles} | new : {counter} | skipped: {skipped_count} | Errors: {errors} | at_start :{len_visiteds}")
     
+    url = url_line.strip()
+
     article = Article(url)
 
     if article.pii in visited_pii:
         skipped_count += 1
         continue
     
-    url = url_line.strip()
+   
     url_obj = Url(url)
     resp = url_obj.response
 
