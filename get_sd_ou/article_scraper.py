@@ -39,6 +39,8 @@ for i, url_line in enumerate(url_lines):
     if i % 10 == 0:
         logger.info(f"{i}/{len_articles} | new : {counter} | skipped: {skipped_count} | Errors: {errors} | at_start :{len_visiteds}")
     
+    article = Article(url)
+
     if article.pii in visited_pii:
         skipped_count += 1
         continue
@@ -56,9 +58,10 @@ for i, url_line in enumerate(url_lines):
     
     soup = bs(resp, 'html.parser')
     
+    article._soup = soup
+
     del url_obj, resp
 
-    article = Article(url, soup_data=soup)
     
  
 
