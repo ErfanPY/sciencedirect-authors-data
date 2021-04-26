@@ -16,8 +16,11 @@ logger.setLevel(Config.LOG_LEVEL)
 
 import sys
 
+articles_path = False
+
 if len(sys.argv) == 2:
     articles_path = sys.argv[1]
+
 with open(articles_path or Config.ARTICLES_URL_PATH) as art_file:
     url_lines = set(art_file.readlines())
 
