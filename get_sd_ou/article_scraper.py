@@ -15,13 +15,14 @@ logger = logging.getLogger('mainLogger')
 logger.setLevel(Config.LOG_LEVEL)
 
 import sys
-
-articles_path = False
-
+articles_path = None
 if len(sys.argv) == 2:
     articles_path = sys.argv[1]
 
-with open(articles_path or Config.ARTICLES_URL_PATH) as art_file:
+articles_path = articles_path or Config.ARTICLES_URL_PATH
+log_path = articles_path + '.failed_urls.txt'
+
+with open(articles_path) as art_file:
     url_lines = set(art_file.readlines())
 
 db_connection = init_db()
@@ -37,7 +38,7 @@ counter = 0
 for i, url_line in enumerate(url_lines):
     
     if i % 10 == 0:
-        logger.info(f"{i}/{len_articles} | new : {counter} | skipped: {skipped_count} | Errors: {errors} | at_start :{len_visiteds}")
+        logger.info(f"{articles_path} |> {i}/{len_articles} | new : {counter} | skipped: {skipped_count} | Errors: {errors} | at_start :{len_visiteds}")
     
     url = url_line.strip()
 
@@ -53,7 +54,7 @@ for i, url_line in enumerate(url_lines):
 
     if not resp:
         if resp == 0:
-            with open('failed_urls.txt', 'a') as failed:
+            with open(log_path, 'a') as failed:
                 failed.write(url_line)
         errors += 1
         continue
