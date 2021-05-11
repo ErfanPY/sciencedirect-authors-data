@@ -17,12 +17,16 @@ parser.add_argument('--path', action='store', type=str, default=Config.ARTICLES_
 args = parser.parse_args()
 
 articles_path = args.path
-log_path = articles_path + '.failed_urls.txt'
-handler = logging.FileHandler(log_path, 'w+')
+err_log_path = articles_path + '.failed_urls.txt'
 
 logger = logging.getLogger('mainLogger')
-logger.handlers[1] = handler
 logger.setLevel(Config.LOG_LEVEL)
+
+handler = logging.FileHandler(err_log_path, 'w+')
+handler.setLevel(logging.ERROR)
+handler.setFormatter(logger.handlers[0].formatter)
+
+logger.addHandler(handler)
 
 
 if args.proxy:
@@ -59,10 +63,8 @@ for i, url_line in enumerate(url_lines):
     url_obj = Url(url)
     resp = url_obj.response
 
-    if not resp:
-        if resp == 0:
-            with open(log_path, 'a') as failed:
-                failed.write(url_line)
+    if not resp or resp == 0:
+        logger.error(url_line)
         errors += 1
         continue
     
