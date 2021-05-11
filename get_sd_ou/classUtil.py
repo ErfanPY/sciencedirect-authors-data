@@ -174,7 +174,7 @@ class Article(Page):
         self.bibtex = ''
         self.bibtex_url = None
 
-        self._title = ''
+        self._title = None
         self._keywords = ''
 
         if do_bibtex:
@@ -212,7 +212,7 @@ class Article(Page):
             with open('exceptions.txt', "a") as excp_file:
                 excp_file.write(f"\n[519], url:{self.url}, exception:{e}\n")
             print(self.url)
-            raise e
+            return None
 
         return data
 
