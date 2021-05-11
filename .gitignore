@@ -15,3 +15,4 @@ dump.rdb
 get_sd_ou/proxylist.txt
 get_sd_ou/config.py
 venv/
+*.sql.txt*

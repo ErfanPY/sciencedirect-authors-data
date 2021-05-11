@@ -16,17 +16,18 @@ parser.add_argument('--path', action='store', type=str, default=Config.ARTICLES_
 
 args = parser.parse_args()
 
+articles_path = args.path
+log_path = articles_path + '.failed_urls.txt'
+handler = logging.FileHandler(log_path, 'w+')
+
+logger = logging.getLogger('mainLogger')
+logger.handlers[1] = handler
+logger.setLevel(Config.LOG_LEVEL)
+
+
 if args.proxy:
     socks.setdefaultproxy(socks.PROXY_TYPE_SOCKS5, "localhost", 8080)
     socket.socket = socks.socksocket
-
-logger = logging.getLogger('mainLogger')
-logger.setLevel(Config.LOG_LEVEL)
-
-import sys
-articles_path = args.path
-
-log_path = articles_path + '.failed_urls.txt'
 
 with open(articles_path) as art_file:
     url_lines = set(art_file.readlines())
