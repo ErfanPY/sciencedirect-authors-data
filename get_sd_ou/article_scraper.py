@@ -22,7 +22,7 @@ err_log_path = articles_path + '.failed_urls.txt'
 logger = logging.getLogger('mainLogger')
 logger.setLevel(Config.LOG_LEVEL)
 
-handler = logging.FileHandler(err_log_path, 'w+')
+handler = logging.FileHandler(err_log_path, 'a')
 handler.setLevel(logging.ERROR)
 handler.setFormatter(logger.handlers[0].formatter)
 
