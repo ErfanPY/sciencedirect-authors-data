@@ -11,7 +11,7 @@ from get_sd_ou.databaseUtil import get_articles, init_db, insert_article_data
 import argparse
 
 parser = argparse.ArgumentParser(description='Process some integers.')
-parser.add_argument('--proxy', help='Do use proxy or not', default=Config.USE_PROXY, action=argparse.BooleanOptionalAction)
+parser.add_argument('--proxy', help='Do use proxy or not', default=Config.USE_PROXY, action="store_true")
 parser.add_argument('--path', action='store', type=str, default=Config.ARTICLES_URL_PATH, help='path to article links file.')
 
 args = parser.parse_args()
