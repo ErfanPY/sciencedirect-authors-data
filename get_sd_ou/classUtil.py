@@ -74,7 +74,7 @@ class Url():
                     if e.code == 404:
                         return None
                     if e.code == 403:
-                        logger.info("403 - Connection Refused | " + e)
+                        logger.info("403 - Connection Refused | " + str(e))
                     
                     logger.info(f"Connection Error | {e} | {self.url}")
                 
