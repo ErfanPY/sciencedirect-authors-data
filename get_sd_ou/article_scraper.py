@@ -18,15 +18,22 @@ args = parser.parse_args()
 
 articles_path = args.path
 err_log_path = articles_path + '.failed_urls.txt'
+info_log_path = articles_path + '.log'
 
 logger = logging.getLogger('mainLogger')
 logger.setLevel(Config.LOG_LEVEL)
 
-handler = logging.FileHandler(err_log_path, 'a')
-handler.setLevel(logging.ERROR)
-handler.setFormatter(logger.handlers[0].formatter)
+info_handler = logging.FileHandler(info_log_path, 'w')
+info_handler.setLevel(Config.LOG_LEVEL)
+info_handler.setFormatter(logger.handlers[0].formatter)
 
-logger.addHandler(handler)
+logger.addHandler(info_handler)
+
+err_handler = logging.FileHandler(err_log_path, 'a')
+err_handler.setLevel(logging.ERROR)
+err_handler.setFormatter(logger.handlers[0].formatter)
+
+logger.addHandler(err_handler)
 
 
 if args.proxy:
